@@ -1,7 +1,7 @@
 include_directories(.)
+include_directories(${DEPENDS_DIR}/json)
 
-
-add_library(ethsnarks_common STATIC export.cpp import.cpp stubs.cpp utils.cpp)
+add_library(ethsnarks_common STATIC export.cpp import.cpp stubs.cpp utils.cpp sha256.c)
 target_link_libraries(ethsnarks_common ff)
 target_include_directories(ethsnarks_common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

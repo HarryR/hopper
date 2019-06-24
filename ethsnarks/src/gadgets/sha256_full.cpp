@@ -9,7 +9,7 @@
 #include <libsnark/gadgetlib1/gadgets/hashes/sha256/sha256_components.hpp>  // SHA256_default_IV
 #include <libsnark/gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp>      // sha256_compression_function_gadget
 
-#include <openssl/sha.h>    // SHA256_CTX
+#include "sha256.h"    // SHA256_CTX
 
 #include "utils.hpp"
 

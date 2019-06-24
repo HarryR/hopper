@@ -1,3 +1,6 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+
 // Copyright (c) 2018 HarryR
 // License: GPL-3.0+
 
@@ -8,12 +11,9 @@
 
 #include <cassert>
 #include <libsnark/knowledge_commitment/knowledge_commitment.hpp>
-#include <boost/property_tree/json_parser.hpp>
 #include <gmp.h>
 
 #include "import.hpp"
-
-using boost::property_tree::read_json;
 
 using libsnark::r1cs_gg_ppzksnark_zok_proof;
 using libsnark::r1cs_gg_ppzksnark_zok_verification_key;
@@ -25,16 +25,19 @@ using std::vector;
 using std::stringstream;
 
 
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
+
 namespace ethsnarks {
 
 
-
-FqT parse_Fq(string &input) {
+FqT parse_Fq(const string &input) {
     return parse_bigint<FqT>(input);
 }
 
 
-FieldT parse_FieldT(string &input) {
+FieldT parse_FieldT(const string &input) {
     return parse_bigint<FieldT>(input);
 }
 
@@ -42,17 +45,15 @@ FieldT parse_FieldT(string &input) {
 /**
 * Create a list of F<x> elements from a node in a property tree, in JSON this is:
 *
-*   "in_key": [N, N, N, ...]
+*   [N, N, N, ...]
 */
-vector<FieldT> create_F_list_from_ptree( PropertyTreeT &in_tree, const char *in_key )
+vector<FieldT> create_F_list( const json &in_tree )
 {
     vector<FieldT> elements;
 
-    for( auto& item : in_tree.get_child(in_key) )
+    for( auto& item : in_tree )
     {
-        auto element = item.second.get_value<string>();
-
-        elements.push_back( parse_FieldT( element ) );
+        elements.emplace_back( parse_FieldT( item ) );
     }
 
     return elements;
@@ -64,7 +65,7 @@ vector<FieldT> create_F_list_from_ptree( PropertyTreeT &in_tree, const char *in_
 *
 * This assumes the coordinates are affine.
 */
-G1T create_G1(string &in_X, string &in_Y)
+G1T create_G1(const string &in_X, const string &in_Y)
 {
     return G1T(parse_Fq(in_X), parse_Fq(in_Y), FqT("1"));
 
@@ -79,7 +80,7 @@ G1T create_G1(string &in_X, string &in_Y)
 *
 * This assumes the coordinates are affine.
 */
-G2T create_G2(string &in_X_c1, string &in_X_c0, string &in_Y_c1, string &in_Y_c0)
+G2T create_G2(const string &in_X_c1, const string &in_X_c0, const string &in_Y_c1, const string &in_Y_c0)
 {
     typedef typename ppT::Fqe_type Fq2_T;
 
@@ -93,34 +94,14 @@ G2T create_G2(string &in_X_c1, string &in_X_c0, string &in_Y_c1, string &in_Y_c0
 
 
 /**
-* Retrieve all children of a given key as a vector of a given type
-*/
-template <typename T>
-vector<T> as_vector(PropertyTreeT const& in_tree)
-{
-    vector<T> vars;
-
-    for (auto& item : in_tree)
-    {
-        vars.push_back(item.second.get_value<T>());
-    }
-
-    return vars;
-}
-
-
-/**
 * Create a G1 element from a node in a property tree, in JSON this is:
 *
 *   "in_key": ["X", "Y"]
 */
-G1T create_G1_from_ptree( PropertyTreeT &in_tree, const char *in_key )
+G1T create_G1( const json &in_tree )
 {
-    auto vars = as_vector<string>(in_tree.get_child(in_key));
-
-    assert(vars.size() == 2);
-
-    return create_G1(vars[0], vars[1]);
+    assert(in_tree.size() == 2);
+    return create_G1(in_tree[0].get<string>(), in_tree[1].get<string>());
 }
 
 
@@ -129,19 +110,15 @@ G1T create_G1_from_ptree( PropertyTreeT &in_tree, const char *in_key )
 *
 *   "in_key": [["X", "Y"], ["X", "Y"], ...]
 */
-vector<G1T> create_G1_list_from_ptree( PropertyTreeT &in_tree, const char *in_key )
+vector<G1T> create_G1_list( const json &in_tree )
 {
     typedef typename ppT::G1_type G1_T;
 
     vector<G1_T> points;
 
-    for( auto& item : in_tree.get_child(in_key) )
+    for( auto& item : in_tree )
     {
-        auto vars = as_vector<string>(item.second);
-
-        assert(vars.size() == 2);
-
-        points.push_back( create_G1(vars[0], vars[1]) );
+        points.emplace_back( create_G1(item) );
     }
 
     return points;
@@ -152,25 +129,16 @@ vector<G1T> create_G1_list_from_ptree( PropertyTreeT &in_tree, const char *in_ke
 /**
 * Create a G2 element from a node in a property tree, in JSON this is:
 *
-*   "in_key": [["X.c1", "X.c0"], ["Y.c1", "Y.c0"]]
+*   [["X.c1", "X.c0"], ["Y.c1", "Y.c0"]]
 */
-G2T create_G2_from_ptree( PropertyTreeT &in_tree, const char *in_key )
+G2T create_G2( const json &in_tree )
 {
-    vector<vector<string> > items;
+    assert( in_tree.size() == 2 );
+    assert( in_tree[0].size() == 2 );
+    assert( in_tree[1].size() == 2 );
 
-    for( auto& item : in_tree.get_child(in_key) )
-    {
-        auto vars = as_vector<string>(item.second);
-
-        assert(vars.size() == 2);
-
-        items.push_back( vars );
-    }
-
-    assert(items.size() == 2);
-
-    return create_G2(items[0][0], items[0][1],
-                     items[1][0], items[1][1]);
+    return create_G2(in_tree[0][0].get<string>(), in_tree[0][1].get<string>(),
+                     in_tree[1][0].get<string>(), in_tree[1][1].get<string>());
 }
 
 
@@ -182,12 +150,12 @@ G2T create_G2_from_ptree( PropertyTreeT &in_tree, const char *in_key )
 *    "C": g1,
 *    "input": [N, N, N ...]}
 */
-InputProofPairType proof_from_tree( PropertyTreeT &in_tree )
+InputProofPairType proof_from_json( const json &in_tree )
 {
-    auto A = create_G1_from_ptree(in_tree, "A");
-    auto B = create_G2_from_ptree(in_tree, "B");
-    auto C = create_G1_from_ptree(in_tree, "C");
-    auto input = create_F_list_from_ptree(in_tree, "input");
+    auto A = create_G1(in_tree.at("A"));
+    auto B = create_G2(in_tree.at("B"));
+    auto C = create_G1(in_tree.at("C"));
+    auto input = create_F_list(in_tree.at("input"));
 
     ProofT proof(
         std::move(A),
@@ -203,11 +171,7 @@ InputProofPairType proof_from_tree( PropertyTreeT &in_tree )
 */
 InputProofPairType proof_from_json( stringstream &in_json )
 {
-    PropertyTreeT root;
-
-    read_json(in_json, root);
-
-    return proof_from_tree(root);
+    return proof_from_json(json::parse(in_json));
 }
 
 
@@ -220,14 +184,14 @@ InputProofPairType proof_from_json( stringstream &in_json )
 *    "delta": g2,
 *    "gamma_ABC": [g1, g1, g1...]}
 */
-VerificationKeyT vk_from_tree( PropertyTreeT &in_tree )
+VerificationKeyT vk_from_json( const json &in_tree )
 {
     // Array of IC G1 points
-    auto gamma_ABC_g1 = create_G1_list_from_ptree(in_tree, "gammaABC");
-    auto alpha_g1 = create_G1_from_ptree(in_tree, "alpha");
-    auto beta_g2 = create_G2_from_ptree(in_tree, "beta");
-    auto gamma_g2 = create_G2_from_ptree(in_tree, "gamma");
-    auto delta_g2 = create_G2_from_ptree(in_tree, "delta");
+    auto gamma_ABC_g1 = create_G1_list(in_tree.at("gammaABC"));
+    auto alpha_g1 = create_G1(in_tree.at("alpha"));
+    auto beta_g2 = create_G2(in_tree.at("beta"));
+    auto gamma_g2 = create_G2(in_tree.at("gamma"));
+    auto delta_g2 = create_G2(in_tree.at("delta"));
 
     // IC must be split into `first` and `rest` for the accumulator
     auto gamma_ABC_g1_rest = decltype(gamma_ABC_g1)(gamma_ABC_g1.begin() + 1, gamma_ABC_g1.end());
@@ -247,11 +211,7 @@ VerificationKeyT vk_from_tree( PropertyTreeT &in_tree )
 */
 VerificationKeyT vk_from_json( stringstream &in_json )
 {
-    PropertyTreeT root;
-
-    read_json(in_json, root);
-
-    return vk_from_tree(root);
+    return vk_from_json(json::parse(in_json));
 }
 
 // ethsnarks

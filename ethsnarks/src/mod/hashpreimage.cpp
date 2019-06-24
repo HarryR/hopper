@@ -13,7 +13,7 @@
 
 #include <libff/algebra/fields/field_utils.hpp>
 
-#include <openssl/sha.h>
+#include "sha256.h"
 
 namespace ethsnarks {
 

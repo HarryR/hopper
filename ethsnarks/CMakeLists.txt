@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.9)
 
 project(ethsnarks)
 
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.13")
+  cmake_policy(SET CMP0077 NEW) # ENABLE CMP0077: option() honors normal variables
+endif()
+
 
 include(CTest)
 enable_testing()
@@ -190,22 +194,6 @@ set_target_properties(
 )
 
 
-# Locate the gmpxx library and its includes
-find_path(GMPXX_INCLUDE_DIR gmpxx.h)
-find_library(GMPXX_LIBRARY gmpxx)
-if(GMPXX_LIBRARY MATCHES ${CMAKE_SHARED_LIBRARY_SUFFIX})
-  set(gmpxx_library_type SHARED)
-else()
-  set(gmpxx_library_type STATIC)
-endif()
-add_library(GMP::gmpxx ${gmpxx_library_type} IMPORTED)
-message(STATUS "GMPxx: ${GMPXX_LIBRARY}, ${GMPXX_INCLUDE_DIR}")
-set_target_properties(
-  GMP::gmpxx PROPERTIES
-  IMPORTED_LOCATION ${GMPXX_LIBRARY}
-  INTERFACE_INCLUDE_DIRECTORIES ${GMPXX_INCLUDE_DIR}
-)
-
 
 add_compile_options(-fPIC)
 
@@ -217,9 +205,6 @@ if("${WITH_PROCPS}")
 else()
   add_definitions(-DNO_PROCPS)
 endif()
-
-set(OPENSSL_ROOT_DIR /usr/local/opt/openssl/)
-find_package(OpenSSL REQUIRED)
 
 
 add_library(
