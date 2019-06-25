@@ -51,6 +51,7 @@ ethsnarks: build.emscripten/mixer_cli.js
 
 build.emscripten/mixer_cli.js: build/cmake_install.cmake #ethsnarks-patches
 	make -C build mixer_cli mixer_js
+	cp build.emscripten/mixer_js.* example/
 
 build/cmake_install.cmake: build
 	cd build && emcmake cmake .. -DWITH_PROCPS=OFF -DPKG_CONFIG_USE_CMAKE_PREFIX_PATH=ON -DCMAKE_PREFIX_PATH=`pwd`/../installroot/ 

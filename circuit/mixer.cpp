@@ -89,7 +89,7 @@ public:
                                                 // logic gadgets
                                                 nullifier_hash(in_pb, nullifier_hash_IV, {nullifier_secret_var, nullifier_secret_var}, FMT(annotation_prefix, ".spend_hash")),
                                                 // leaf_hash(in_pb, leaf_hash_IV, {nullifier_secret_var, wallet_address_var}, FMT(annotation_prefix, ".leaf_hash")),
-                                                leaf_hash(in_pb, nullifier_secret_var, wallet_address_var),
+                                                leaf_hash(in_pb, nullifier_secret_var, wallet_address_var, FMT(annotation_prefix, ".leaf_hash")),
                                                 m_authenticator(in_pb, tree_depth, address_bits, m_IVs, leaf_hash.result(), root_var, path_var, FMT(annotation_prefix, ".authenticator"))
     {
         in_pb.set_input_sizes(3);
@@ -102,7 +102,9 @@ public:
         nullifier_hash.generate_r1cs_constraints();
         leaf_hash.generate_r1cs_constraints();
         m_authenticator.generate_r1cs_constraints();
-        this->pb.add_r1cs_constraint(libsnark::r1cs_constraint<FieldT>(nullifier_var, 1, nullifier_hash.result()));
+        this->pb.add_r1cs_constraint(
+            libsnark::r1cs_constraint<FieldT>(nullifier_var, 1, nullifier_hash.result()),
+            FMT(annotation_prefix, ".nullifier_var == nullifier_hash"));
     }
 
     void generate_r1cs_witness(

@@ -53,7 +53,7 @@ vector<FieldT> create_F_list( const json &in_tree )
 
     for( auto& item : in_tree )
     {
-        elements.emplace_back( parse_FieldT( item ) );
+        elements.emplace_back( parse_FieldT( item.get<string>() ) );
     }
 
     return elements;

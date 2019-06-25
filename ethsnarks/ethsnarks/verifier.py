@@ -96,7 +96,9 @@ def pairingProd(*inputs):
 
 class BaseProof(object):
     def to_json(self):
-        return json.dumps(self._asdict(), cls=CustomEncoder)
+        obj = self._asdict()
+        obj['input'] = [hex(_) for _ in obj['input']]
+        return json.dumps(obj, cls=CustomEncoder)
 
     @classmethod
     def from_json(cls, json_data):

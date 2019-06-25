@@ -8,7 +8,7 @@ from mixer import Mixer
 
 from hashlib import sha256
 
-NATIVE_LIB_PATH = native_lib_path('../.build/libmixer')
+NATIVE_LIB_PATH = native_lib_path('../.build/libmixer_shared')
 VK_PATH = '../.keys/mixer.vk.json'
 PK_PATH = '../.keys/mixer.pk.raw'
 

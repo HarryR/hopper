@@ -3,6 +3,7 @@ __all__ = ('Mixer',)
 import os
 import re
 import ctypes
+import json
 
 from ethsnarks.verifier import Proof, VerifyingKey
 
@@ -31,7 +32,12 @@ class Mixer(object):
         lib_tree_depth.restype = ctypes.c_size_t
         self.tree_depth = lib_tree_depth()
         assert self.tree_depth > 0
-        assert self.tree_depth < 32
+        assert self.tree_depth <= 32
+
+        lib_prove_json = lib.mixer_prove_json
+        lib_prove_json.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+        lib_prove_json.restype = ctypes.c_char_p
+        self._prove_json = lib_prove_json
 
         lib_prove = lib.mixer_prove
         lib_prove.argtypes = ([ctypes.c_char_p] * 6) + \
@@ -62,23 +68,20 @@ class Mixer(object):
         if pk_file is None:
             raise RuntimeError("No proving key file")
 
-        # Public parameters
-        root = ctypes.c_char_p(str(root).encode('ascii'))
-        wallet_address = ctypes.c_char_p(str(wallet_address).encode('ascii'))
-        nullifier = ctypes.c_char_p(str(nullifier).encode('ascii'))
-
-        # Private parameters
-        nullifier_secret = ctypes.c_char_p(
-            str(nullifier_secret).encode('ascii'))
-        address_bits = ctypes.c_char_p(address_bits.encode('ascii'))
-        path = [ctypes.c_char_p(str(_).encode('ascii')) for _ in path]
-        path_carr = (ctypes.c_char_p * len(path))()
-        path_carr[:] = path
-
         pk_file_cstr = ctypes.c_char_p(pk_file.encode('ascii'))
 
-        data = self._prove(pk_file_cstr, root, wallet_address, nullifier,
-                           nullifier_secret, address_bits, path_carr)
+        args_dict = dict(
+            root=hex(root),
+            wallet_address=hex(wallet_address),
+            nullifier=hex(nullifier),
+            nullifier_secret=hex(nullifier_secret),
+            address=sum([(1<<i)*int(_) for i, _ in enumerate(address_bits)]),
+            path=[hex(_) for _ in path]
+        )
+        args_json = json.dumps(args_dict).encode('ascii')
+        print(args_json)
+        args_json_cstr = ctypes.c_char_p(args_json)
+        data = self._prove_json(pk_file_cstr, args_json_cstr)
 
         if data is None:
             raise RuntimeError("Could not prove!")
