@@ -9,7 +9,7 @@ set(USE_ASM OFF)
 set(WITH_PROCPS OFF)
 set(DEBUG OFF)
 set(WITH_SUPERCOP OFF)
-set(CMAKE_CXX_FLAGS "--std=c++11 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0")
+set(CMAKE_CXX_FLAGS "--std=c++11 -O3 -fno-rtti -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0")
 
 set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/installroot)
 
@@ -40,3 +40,10 @@ add_library(mixer STATIC ../circuit/mixer.cpp)
 
 add_executable(mixer_cli ../circuit/mixer_cli.cpp)
 target_link_libraries(mixer_cli ethsnarks_common SHA3IUF)
+
+add_executable(mixer_js ../circuit/mixer.cpp)
+target_link_libraries(mixer_js ethsnarks_common SHA3IUF)
+
+target_compile_options(mixer_js PUBLIC -s EXPORTED_FUNCTIONS=["_mixer_prove_json","_mixer_verify","_mixer_tree_depth"])
+target_link_options(mixer_js PUBLIC -s EXPORTED_FUNCTIONS=["_mixer_prove_json","_mixer_verify","_mixer_tree_depth"])
+#target_compile_options(mixer_cli PUBLIC "-s" EXTRA_EXPORTED_RUNTIME_METHODS=["ccall","cwrap"])

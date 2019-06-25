@@ -10,9 +10,11 @@ FASTCOMP = emsdk/fastcomp
 
 OS := $(shell uname)
 
-all:
-	@echo ...
 
+#######################################################################
+
+
+all: emscripten gmp ethsnarks
 
 installroot:
 	mkdir -p $@
@@ -40,8 +42,7 @@ endif
 $(FASTCOMP)/emscripten/emcc:
 	./emsdk/emsdk install latest
 	./emsdk/emsdk activate latest
-	# For OSX:	
-	#source emsdk/emsdk_env.sh
+
 
 #######################################################################
 # ethsnarks
@@ -49,7 +50,7 @@ $(FASTCOMP)/emscripten/emcc:
 ethsnarks: build.emscripten/mixer_cli.js
 
 build.emscripten/mixer_cli.js: build/cmake_install.cmake #ethsnarks-patches
-	make -C build mixer_cli
+	make -C build mixer_cli mixer_js
 
 build/cmake_install.cmake: build
 	cd build && emcmake cmake .. -DWITH_PROCPS=OFF -DPKG_CONFIG_USE_CMAKE_PREFIX_PATH=ON -DCMAKE_PREFIX_PATH=`pwd`/../installroot/ 
@@ -69,7 +70,7 @@ installroot/lib/libgmp.a: installroot $(GMP_DIR) $(GMP_MAKE_BINS) $(GMP_DIR)/Mak
 
 $(GMP_DIR)/Makefile: $(GMP_DIR)
 	cd $< && sed -i.bak -e 's/^# Only do the GMP_ASM .*/gmp_asm_syntax_testing=no/' configure.ac && autoconf
-	cd $< && emcmake ./configure ABI=standard --prefix=`pwd`/../installroot/ ABI=standard --host=none --disable-assembly --disable-shared || cat config.log
+	cd $< && emcmake ./configure ABI=standard CFLAGS="-O3" --prefix=`pwd`/../installroot/ --host=none --disable-assembly --disable-shared || cat config.log
 
 $(GMP_DIR): $(GMP_TAR)
 	tar -xf $<
