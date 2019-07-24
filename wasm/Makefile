@@ -22,6 +22,9 @@ installroot:
 build:
 	mkdir -p $@
 
+example-server:
+	php -t example -S 127.0.0.1:3333
+
 
 #######################################################################
 # emscripten
@@ -49,12 +52,15 @@ $(FASTCOMP)/emscripten/emcc:
 
 ethsnarks: build.emscripten/mixer_cli.js
 
-build.emscripten/mixer_cli.js: build/cmake_install.cmake #ethsnarks-patches
+cmake-patch:
+	sed -i.bak -e 's/$$$$Browser/$$Browser/' ./build/CMakeFiles/mixer_js.dir/link.txt
+
+build.emscripten/mixer_cli.js: build/cmake_install.cmake cmake-patch
 	make -C build mixer_cli mixer_js
 	cp build.emscripten/mixer_js.* example/
 
 build/cmake_install.cmake: build
-	cd build && emcmake cmake .. -DWITH_PROCPS=OFF -DPKG_CONFIG_USE_CMAKE_PREFIX_PATH=ON -DCMAKE_PREFIX_PATH=`pwd`/../installroot/ 
+	cd build && emcmake cmake -DCMAKE_BUILD_TYPE=Release .. -DWITH_PROCPS=OFF -DPKG_CONFIG_USE_CMAKE_PREFIX_PATH=ON -DCMAKE_PREFIX_PATH=`pwd`/../installroot/ 
 
 
 #######################################################################

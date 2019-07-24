@@ -1,3 +1,5 @@
+TRUFFLE ?= ./node_modules/.bin/truffle
+
 node_modules:
 	npm install
 
@@ -7,11 +9,11 @@ test: node_modules
 
 .PHONY: deploy
 deploy: node_modules
-	truffle migrate
+	$(TRUFFLE) migrate
 
 deploy-rinkeby: node_modules
-	truffle migrate --network localrinkeby
+	$(TRUFFLE) migrate --network localrinkeby
 deploy-ropsten: node_modules
-	truffle migrate --network ropsten
+	$(TRUFFLE) migrate --network ropsten
 deploy-mainnet: node_modules
-	truffle migrate --network mainnet
+	$(TRUFFLE) migrate --network mainnet

@@ -3,12 +3,19 @@ const HDWalletProvider = require("truffle-hdwallet-provider");
 
 module.exports = {
   networks: {
+    testrpc: {
+      host: "localhost",
+      port: 8545,
+      network_id: "*"
+    },
+    /*
     development: {
       host: "localhost",
       port: 7545,
       network_id: "*", // Match any network id
       gas: 6.5e6 // Gas limit
     },
+    */
     localrinkeby: {
       // Rinkeby via a local geth node
       host: "localhost",

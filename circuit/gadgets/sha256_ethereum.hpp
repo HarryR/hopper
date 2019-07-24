@@ -46,10 +46,11 @@ class ethereum_sha256 : gadget<FieldT>
         pb_variable<FieldT> &ZERO,
         pb_variable_array<FieldT> &a,
         pb_variable_array<FieldT> &b,
-        std::shared_ptr<digest_variable<FieldT>> result) : gadget<FieldT>(pb, "ethereum_sha256")
+        std::shared_ptr<digest_variable<FieldT>> result,
+        const std::string &annotation_prefix="") : gadget<FieldT>(pb, FMT(annotation_prefix, "(ethereum_sha256)"))
     {
 
-        intermediate_hash.reset(new digest_variable<FieldT>(pb, 256, "intermediate"));
+        intermediate_hash.reset(new digest_variable<FieldT>(pb, 256, FMT(this->annotation_prefix, ".intermediate")));
 
         // final padding
         pb_variable_array<FieldT> length_padding =
@@ -122,9 +123,9 @@ class ethereum_sha256 : gadget<FieldT>
                        0, 0, 0, 0, 0, 0, 0, 0},
                       ZERO);
 
-        block1.reset(new block_variable<FieldT>(pb, {a, b}, "block1"));
+        block1.reset(new block_variable<FieldT>(pb, {a, b}, FMT(this->annotation_prefix, ".block1")));
 
-        block2.reset(new block_variable<FieldT>(pb, {length_padding}, "block2"));
+        block2.reset(new block_variable<FieldT>(pb, {length_padding}, FMT(this->annotation_prefix, ".block2")));
 
         pb_linear_combination_array<FieldT> IV = SHA256_default_IV(pb);
 
@@ -133,7 +134,7 @@ class ethereum_sha256 : gadget<FieldT>
             IV,
             block1->bits,
             *intermediate_hash,
-            "hasher1"));
+            FMT(this->annotation_prefix, ".hasher1")));
 
         pb_linear_combination_array<FieldT> IV2(intermediate_hash->bits);
 
@@ -142,7 +143,7 @@ class ethereum_sha256 : gadget<FieldT>
             IV2,
             block2->bits,
             *result,
-            "hasher2"));
+            FMT(this->annotation_prefix, ".hasher2")));
     }
 
     void generate_r1cs_constraints()

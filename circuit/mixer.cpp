@@ -145,7 +145,7 @@ size_t mixer_tree_depth(void)
 }
 
 
-static char* mixer_prove_internal(
+char* mixer_prove_internal(
     const char *pk_file,
     const FieldT &arg_root,
     const FieldT &arg_wallet_address,

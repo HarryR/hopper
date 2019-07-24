@@ -14,6 +14,7 @@
 			};
 
 			Module['onRuntimeInitialized'] = function () {
+				alert('Starting Prove');
 			    var begin_prove = new Date().getTime() / 1000;
 				var mixer_prove_json = Module.cwrap('mixer_prove_json', 'string', ['string', 'string']);
 				var result = mixer_prove_json('/mixer.pk.raw', JSON.stringify(test_data));

@@ -17,6 +17,7 @@ using std::ofstream;
 using ethsnarks::mod_mixer;
 using ethsnarks::stub_main_genkeys;
 using ethsnarks::stub_main_verify;
+using ethsnarks::dump_pb_r1cs_constraints;
 
 static int main_prove(int argc, char **argv)
 {
@@ -106,11 +107,14 @@ static int main_prove_json( int argc, char **argv )
 }
 
 
+void mixer_setup_pb_internal(ProtoboardT& pb);
+
+
 int main(int argc, char **argv)
 {
     if (argc < 2)
     {
-        cerr << "Usage: " << argv[0] << " <genkeys|prove|prove_json|verify> [...]" << endl;
+        cerr << "Usage: " << argv[0] << " <genkeys|prove|prove_json|verify|constraints> [...]" << endl;
         return 1;
     }
 
@@ -130,6 +134,15 @@ int main(int argc, char **argv)
     {
         return stub_main_verify(argv[0], argc - 1, (const char **)&argv[1]);
     }
+#ifdef DEBUG
+    else if (0 == ::strcmp(argv[1], "constraints")) {
+        ProtoboardT pb;
+        ethsnarks::mod_mixer mod(pb, "module");
+        mod.generate_r1cs_constraints();
+        dump_pb_r1cs_constraints(pb);
+        return 0;
+    }
+#endif
 
     cerr << "Error: unknown sub-command " << argv[1] << endl;
     return 2;

@@ -3,7 +3,7 @@ const ref = require("ref");
 const ArrayType = require("ref-array");
 const StringArray = ArrayType(ref.types.CString);
 
-module.exports = ffi.Library("../.build/libmixer", {
+module.exports = ffi.Library("../.build/libmixer_shared", {
   // Retrieve depth of tree
   mixer_tree_depth: ["size_t", []],
 

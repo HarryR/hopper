@@ -1,8 +1,9 @@
 #ifndef SHA256_ETH_FIELDS_HPP_
 #define SHA256_ETH_FIELDS_HPP_
 
-#include "sha256_ethereum.hpp"
+//#include "sha256_ethereum.hpp"
 #include "ethsnarks.hpp"
+#include "gadgets/sha256_full.cpp"
 
 namespace ethsnarks
 {
@@ -40,8 +41,9 @@ class Sha256EthFields : public GadgetT
     VariableT ZERO;
     VariableArrayT left_bits;
     VariableArrayT right_bits;
+    libsnark::block_variable<FieldT> input_block;
     std::shared_ptr<digest_variable<FieldT>> output_digest;
-    std::shared_ptr<ethereum_sha256<FieldT>> hasher;
+    std::shared_ptr<sha256_full_gadget_512> hasher;
 
   public:
     VariableT left;
@@ -58,10 +60,11 @@ class Sha256EthFields : public GadgetT
                                                         output(make_variable(in_pb, FMT(annotation_prefix, ".output"))),
                                                         ZERO(make_variable(in_pb, FMT(annotation_prefix, ".ZERO"))),
                                                         left_bits(make_var_array(in_pb, 256, FMT(annotation_prefix, ".left_bits"))),
-                                                        right_bits(make_var_array(in_pb, 256, FMT(annotation_prefix, ".right_bits")))
+                                                        right_bits(make_var_array(in_pb, 256, FMT(annotation_prefix, ".right_bits"))),
+                                                        input_block(in_pb, {left_bits, right_bits}, FMT(in_annotation_prefix, ".hasher_block"))
     {
-        output_digest.reset(new digest_variable<FieldT>(in_pb, 256, "output_digest"));
-        hasher.reset(new ethereum_sha256<FieldT>(in_pb, ZERO, left_bits, right_bits, output_digest));
+        output_digest.reset(new digest_variable<FieldT>(in_pb, 256, FMT(in_annotation_prefix, ".output_digest")));
+        hasher.reset(new sha256_full_gadget_512(in_pb, input_block, *output_digest, FMT(in_annotation_prefix, ".hasher")));
     }
 
     const VariableT &result() const
