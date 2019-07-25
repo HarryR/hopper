@@ -9,7 +9,6 @@
 #include "utils.hpp"
 
 // handmade gadgets
-#include "gadgets/sha256_ethereum.hpp"
 #include "gadgets/sha256_eth_fields.hpp"
 
 // ethsnarks gadgets
@@ -28,16 +27,11 @@ const size_t MIXER_TREE_DEPTH = 15;
 namespace ethsnarks
 {
 
-/**
-* 
-*/
 class mod_mixer : public GadgetT
 {
 public:
     typedef MiMC_hash_gadget HashT;
-    // typedef LongsightL12p5_MP_gadget HashT;      // MiMC - for merkle tree and nullifier
-    typedef Sha256EthFields<FieldT> Sha256HashT; // SHA256 - for commitment
-    // typedef LongsightL12p5_MP_gadget Sha256HashT; // MiMC - for commitment
+    typedef Sha256EthFields Sha256HashT; // SHA256 - for commitment
     const size_t tree_depth = MIXER_TREE_DEPTH;
 
     // public inputs
