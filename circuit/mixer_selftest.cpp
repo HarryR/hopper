@@ -48,7 +48,7 @@ int main( int argc, char **argv )
 	ethsnarks::vk2json_file(keypair.vk, mixer_vk);
 	ethsnarks::writeToFile<decltype(keypair.pk)>(mixer_pk, keypair.pk);
 
-	std::cerr << "Verifying proof JSON, using vK from disk" << std::endl;
+	std::cerr << "Verifying proof JSON, using VK from disk" << std::endl;
 	const auto vk_json = ethsnarks::vk2json(keypair.vk);
 	const auto proof_json = ethsnarks::proof_to_json(proof, primary_input);
 	if( ! ethsnarks::stub_verify(vk_json.c_str(), proof_json.c_str()) ) {
@@ -56,9 +56,12 @@ int main( int argc, char **argv )
     	return 2;
 	}
 
-	// TODO: serialise key to disk
-
-	// TODO: using loaded key, make the proof, verify
+	std::cerr << "Generating proof, using PK from disk" << std::endl;
+	const auto disk_proof_json = ethsnarks::stub_prove_from_pb(pb, mixer_pk);
+	if( ! ethsnarks::stub_verify(vk_json.c_str(), disk_proof_json.c_str()) ) {
+		std::cerr << "Error: test 3 failed" << std::endl;
+    	return 3;
+	}
 
 	return 0;
 }
