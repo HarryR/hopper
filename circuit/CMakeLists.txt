@@ -26,6 +26,9 @@ include_directories(
     ${DEPENDS_DIR}/libsnark/depends/libff
     ${DEPENDS_DIR}/libsnark/depends/libfqfft)
 
+# Compile with same flags as the library
+add_definitions(-DBINARY_OUTPUT -DCURVE_ALT_BN128 -DMONTGOMERY_OUTPUT -DNO_PROCPS -DNO_PT_COMPRESSION=1)
+
 add_library(mixer STATIC mixer.cpp)
 target_link_libraries(mixer gmp ethsnarks_common SHA3IUF)
 set_property(TARGET mixer PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -40,5 +43,8 @@ else()
     target_link_libraries(mixer_shared gmp ethsnarks_common SHA3IUF)
     add_executable(mixer_cli mixer_cli.cpp)
     target_link_libraries(mixer_cli ethsnarks_common SHA3IUF)
+
+    add_executable(mixer_selftest mixer_selftest.cpp)
+    target_link_libraries(mixer_selftest ethsnarks_common SHA3IUF)
 endif()
 

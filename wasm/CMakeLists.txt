@@ -27,6 +27,7 @@ add_subdirectory(../ethsnarks ethsnarks-build)
 add_subdirectory(../circuit/gadgets gadgets-build)
 
 
+add_definitions(-DBINARY_OUTPUT -DCURVE_ALT_BN128 -DMONTGOMERY_OUTPUT -DNO_PROCPS -DNO_PT_COMPRESSION=1)
 
 include_directories(../ethsnarks/src)
 include_directories(
@@ -40,6 +41,9 @@ add_library(mixer STATIC ../circuit/mixer.cpp)
 
 add_executable(mixer_cli ../circuit/mixer_cli.cpp)
 target_link_libraries(mixer_cli ethsnarks_common SHA3IUF)
+
+add_executable(mixer_selftest ../circuit/mixer_selftest.cpp)
+target_link_libraries(mixer_selftest ethsnarks_common SHA3IUF)
 
 add_executable(mixer_js ../circuit/mixer.cpp)
 target_link_libraries(mixer_js ethsnarks_common SHA3IUF)
