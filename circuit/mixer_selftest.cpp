@@ -11,7 +11,7 @@ static const char *selftest_proof_inputs_json = "{\"root\":\"1099778054981140070
 int main( int argc, char **argv )
 {
 	if( argc < 3 ) {
-		fprintf(stderr, "Usage: mixer_selftest <test.pk.raw> <test.vk.json>\n");
+		fprintf(stderr, "Usage: mixer_selftest <test.pk.raw> <test.vk.json> [test.proof.json [test.inputs.json]]\n");
 		return 99;
 	}
 
@@ -48,9 +48,21 @@ int main( int argc, char **argv )
 	ethsnarks::vk2json_file(keypair.vk, mixer_vk);
 	ethsnarks::writeToFile<decltype(keypair.pk)>(mixer_pk, keypair.pk);
 
-	std::cerr << "Verifying proof JSON, using VK from disk" << std::endl;
-	const auto vk_json = ethsnarks::vk2json(keypair.vk);
 	const auto proof_json = ethsnarks::proof_to_json(proof, primary_input);
+	if( argc > 2 ) {
+		std::ofstream proof_json_fh(argv[3]);
+		proof_json_fh << proof_json;
+		proof_json_fh.close();
+
+		if( argc > 3 ) {
+			std::ofstream proof_input_fh(argv[4]);
+			proof_input_fh << selftest_proof_inputs_json;
+			proof_input_fh.close();
+		}
+	}
+
+	std::cerr << "Verifying proof JSON, using VK from disk" << std::endl;
+	const auto vk_json = ethsnarks::vk2json(keypair.vk);	
 	if( ! ethsnarks::stub_verify(vk_json.c_str(), proof_json.c_str()) ) {
 		std::cerr << "Error: test 2 failed" << std::endl;
     	return 2;

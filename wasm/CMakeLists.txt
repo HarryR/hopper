@@ -49,8 +49,7 @@ add_executable(mixer_js ../circuit/mixer.cpp)
 target_link_libraries(mixer_js ethsnarks_common SHA3IUF)
 
 # Bleh.. have to double-escape stuff and prefix with "SHELL:..." otherwise it combines multiple options into a single `-s` flag
-target_compile_options(mixer_js PUBLIC --preload-file mixer.pk.raw -s EXPORTED_FUNCTIONS=["_mixer_prove_json","_mixer_verify","_mixer_tree_depth"])
-target_link_options(mixer_js PUBLIC "SHELL:-s EXPORTED_FUNCTIONS=[\\\"_mixer_prove_json\\\",\\\"_mixer_verify\\\",\\\"_mixer_tree_depth\\\"]")
+target_link_options(mixer_js PUBLIC "SHELL:-s EXPORTED_FUNCTIONS=[\\\"_mixer_prove_json\\\",\\\"_mixer_genkeys\\\",\\\"_mixer_verify\\\",\\\"_mixer_tree_depth\\\"]")
 target_link_options(mixer_js PUBLIC "SHELL:-s EXTRA_EXPORTED_RUNTIME_METHODS=[\\\"ccall\\\",\\\"cwrap\\\"]")
 
 target_link_options(mixer_js PUBLIC "SHELL:-s FORCE_FILESYSTEM=1")

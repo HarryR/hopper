@@ -7,6 +7,7 @@
 
 #include "mixer.cpp"
 #include "stubs.hpp"
+#include "export.hpp"
 #include "utils.hpp" // hex_to_bytes
 
 using std::cerr;
@@ -96,7 +97,7 @@ static int main_prove_json( int argc, char **argv )
 
     // Otherwise outtput to specific file
     ofstream fh;
-    fh.open(argv[2], std::ios::binary);
+    fh.open(argv[3], std::ios::binary);
     fh << proof_json;
     fh.flush();
     fh.close();
@@ -107,14 +108,63 @@ static int main_prove_json( int argc, char **argv )
 }
 
 
-void mixer_setup_pb_internal(ProtoboardT& pb);
+static int main_debug_pk( int argc, char **argv )
+{
+    ppT::init_public_params();
+
+    if( argc < 3 ) {
+        std::cerr << "Error: must specify proving key file" << std::endl;
+        return 1;
+    }
+
+    const auto proving_key = ethsnarks::loadFromFile<ethsnarks::ProvingKeyT>(argv[2]);
+
+    std::cout << "Alpha G1" << std::endl;
+    std::cout << ethsnarks::outputPointG1AffineAsHex(proving_key.alpha_g1) << std::endl;
+
+    std::cout << "Beta G1" << std::endl;
+    std::cout << ethsnarks::outputPointG1AffineAsHex(proving_key.beta_g1) << std::endl;
+
+    std::cout << "Beta G2" << std::endl;
+    std::cout << ethsnarks::outputPointG2AffineAsHex(proving_key.beta_g2) << std::endl;
+
+    std::cout << "Delta G1" << std::endl;
+    std::cout << ethsnarks::outputPointG1AffineAsHex(proving_key.delta_g1) << std::endl;
+
+    std::cout << "Delta G2" << std::endl;
+    std::cout << ethsnarks::outputPointG2AffineAsHex(proving_key.delta_g2) << std::endl;
+    
+    std::cout << "A Query" << std::endl;
+    for( const auto &Aq1 : proving_key.A_query ) {
+        std::cout << ethsnarks::outputPointG1AffineAsHex(Aq1) << std::endl;
+    }
+
+    std::cout << "B Query" << std::endl;
+    for( size_t i = 0; i < proving_key.B_query.domain_size(); i++ ) {
+        const auto &Bq = proving_key.B_query[i];
+        std::cout << ethsnarks::outputPointG1AffineAsHex(Bq.h) << std::endl;
+        std::cout << ethsnarks::outputPointG2AffineAsHex(Bq.g) << std::endl;
+    }
+
+    std::cout << "H Query" << std::endl;
+    for( const auto &Hq1 : proving_key.H_query ) {
+        std::cout << ethsnarks::outputPointG1AffineAsHex(Hq1) << std::endl;
+    }
+
+    std::cout << "L Query" << std::endl;
+    for( const auto &Lq1 : proving_key.L_query ) {
+        std::cout << ethsnarks::outputPointG1AffineAsHex(Lq1) << std::endl;
+    }
+
+    return 0;
+}
 
 
 int main(int argc, char **argv)
 {
     if (argc < 2)
     {
-        cerr << "Usage: " << argv[0] << " <genkeys|prove|prove_json|verify|constraints> [...]" << endl;
+        cerr << "Usage: " << argv[0] << " <genkeys|prove|prove_json|verify|constraints|debug_pk> [...]" << endl;
         return 1;
     }
 
@@ -134,15 +184,17 @@ int main(int argc, char **argv)
     {
         return stub_main_verify(argv[0], argc - 1, (const char **)&argv[1]);
     }
-#ifdef DEBUG
+    else if (0 == ::strcmp(argv[1], "debug_pk") ) {
+        return main_debug_pk(argc, argv);
+    }
     else if (0 == ::strcmp(argv[1], "constraints")) {
+        ppT::init_public_params();
         ProtoboardT pb;
         ethsnarks::mod_mixer mod(pb, "module");
         mod.generate_r1cs_constraints();
         dump_pb_r1cs_constraints(pb);
         return 0;
     }
-#endif
 
     cerr << "Error: unknown sub-command " << argv[1] << endl;
     return 2;

@@ -25,22 +25,27 @@ const { mixer_prove, mixer_prove_json, mixer_verify } = require("./helpers/libmi
 * This allows WASM proving to be dropped-in wherever native proving is
 * To ensure compatibilty between WASM vs Native builds and on-chain contracts
 */
-function _get_wasm_prover()
+function _get_wasm_prover(
+    _mixer_js_path = undefined,
+    _vfs_pk_file = 'mixer.pk.raw',
+    _local_pk_file = PROVING_KEY_PATH)
 {
-    const wasm_js_file = path.resolve('../wasm/example/mixer_js.js');
+    const wasm_js_file = path.resolve(_mixer_js_path || '../wasm/example/mixer_js.js');
     if( fs.existsSync(wasm_js_file) )
     {
-        const mixer_wasm = require(wasm_js_file);
+        const emscripten_api = require(wasm_js_file);
         console.log('Loaded WASM prover...');
 
         // Load the proving key into the WASM context
-        const proving_key_data = fs.readFileSync(PROVING_KEY_PATH);
-        mixer_wasm.FS_createDataFile('/', 'mixer.pk.raw', proving_key_data, true, false, false);
+        const proving_key_data = fs.readFileSync(_local_pk_file);
+        emscripten_api.FS_createDataFile('/', _vfs_pk_file, proving_key_data, true, false, false);
 
-        const prove_json = mixer_wasm.cwrap('mixer_prove_json', 'string', ['string', 'string']);
-        const verify = mixer_wasm.cwrap('mixer_verify', 'bool', ['string', 'string']);
+        const tree_depth = emscripten_api.cwrap('mixer_tree_depth', 'number', ['string', 'string']);
+        const genkeys = emscripten_api.cwrap('mixer_genkeys', 'number', ['string', 'string']);
+        const prove_json = emscripten_api.cwrap('mixer_prove_json', 'string', ['string', 'string']);
+        const verify = emscripten_api.cwrap('mixer_verify', 'bool', ['string', 'string']);
 
-        return { prove_json, verify };
+        return { prove_json, verify, genkeys, tree_depth, emscripten_api };
     }
 }
 const wasm_mixer = _get_wasm_prover();
@@ -184,11 +189,11 @@ contract("Mixer", function([
           '/mixer.pk.raw'
         );
 
-        console.log('Verify WASM proof with WASM verifier');
-        await verifyProof(proof_wasm.proof_json, proof_wasm.nullifier, proof_wasm.merkle_root, withdrawer1, wasm_mixer.verify);
-
         console.log('Verify WASM proof with Native verifier');
         await verifyProof(proof_wasm.proof_json, proof_wasm.nullifier, proof_wasm.merkle_root);
+
+        console.log('Verify WASM proof with WASM verifier');
+        await verifyProof(proof_wasm.proof_json, proof_wasm.nullifier, proof_wasm.merkle_root, withdrawer1, wasm_mixer.verify);        
       }
 
       // Verify nullifier doesn't exist

@@ -124,6 +124,11 @@ T loadFromFile(std::string path)
 
     // TODO: more useful error if file not found
     assert(fh.is_open());
+#ifdef DEBUG
+    if( ! fh.is_open() ) {
+        std::cerr << "Error: unable to open " << path << std::endl;
+    }
+#endif
 
     ss << fh.rdbuf();
     fh.close();
