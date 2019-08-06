@@ -56,7 +56,7 @@ cmake-patch:
 	sed -i.bak -e 's/$$$$Browser/$$Browser/' ./build/CMakeFiles/mixer_js.dir/link.txt
 
 build.emscripten/mixer_cli.js: build/cmake_install.cmake cmake-patch
-	make -C build mixer_cli mixer_js
+	make -C build mixer_cli mixer_js mixer_selftest
 	cp build.emscripten/mixer_js.* example/
 
 build/cmake_install.cmake: build

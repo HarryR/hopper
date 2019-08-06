@@ -22,7 +22,7 @@ update-submodules:
 clean:
 	rm -rf $(BUILDPATH) && rm -rf $(KEYPATH)
 
-genkeys: build
+genkeys:
 	mkdir -p $(KEYPATH)
 	$(BUILDPATH)/mixer_cli genkeys $(KEYPATH)/mixer.pk.raw $(KEYPATH)/mixer.vk.json
 

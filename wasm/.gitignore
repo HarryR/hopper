@@ -3,3 +3,5 @@ build/
 build.emscripten/
 installroot/
 gmp-*
+test.pk.raw
+test.vk.json

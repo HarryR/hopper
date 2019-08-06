@@ -7,6 +7,15 @@ module.exports = ffi.Library("../.build/libmixer_shared", {
   // Retrieve depth of tree
   mixer_tree_depth: ["size_t", []],
 
+  // Generate proving key, and write to file
+  mixer_prove_json: [
+    "int",
+    [
+      "string", // pk_file
+      "string"  // vk_file
+    ]
+  ],
+
   // Create a proof for the parameters, using JSON arguments
   mixer_prove_json: [
     "string",

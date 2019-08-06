@@ -27,6 +27,57 @@ const size_t MIXER_TREE_DEPTH = 15;
 namespace ethsnarks
 {
 
+
+struct mixer_witness
+{
+    FieldT root;
+    FieldT wallet_address;
+    FieldT nullifier;
+    FieldT nullifier_secret;
+    libff::bit_vector address_bits;
+    std::vector<FieldT> path;
+
+    /**
+    * Construct the witness from a JSON representation of its proof inputs
+    */
+    static struct mixer_witness fromJSON( const char *in_json )
+    {
+        const auto json_root = json::parse(in_json);
+        const auto arg_root = ethsnarks::parse_FieldT(json_root.at("root"));
+        const auto arg_wallet_address = ethsnarks::parse_FieldT(json_root.at("wallet_address"));
+        const auto arg_nullifier = ethsnarks::parse_FieldT(json_root.at("nullifier"));
+        const auto arg_nullifier_secret = ethsnarks::parse_FieldT(json_root.at("nullifier_secret"));
+
+        const auto arg_path = ethsnarks::create_F_list(json_root.at("path"));
+        if( arg_path.size() != MIXER_TREE_DEPTH )
+        {
+            std::cerr << "Path length doesn't match tree depth" << std::endl;
+            abort();
+            //return nullptr;
+        }
+
+        // Fill address bits from integer
+        unsigned long address = json_root.at("address").get<decltype(address)>();
+        assert( (sizeof(address) * 8) >= MIXER_TREE_DEPTH );
+        libff::bit_vector arg_address_bits;
+        arg_address_bits.resize(MIXER_TREE_DEPTH);
+        for( size_t i = 0; i < MIXER_TREE_DEPTH; i++ )
+        {
+            arg_address_bits[i] = (address & (1u<<i)) != 0;
+        }
+
+        return {
+            arg_root,
+            arg_wallet_address,
+            arg_nullifier,
+            arg_nullifier_secret,
+            arg_address_bits,
+            arg_path
+        };
+    }
+};
+
+
 class mod_mixer : public GadgetT
 {
 public:
@@ -101,26 +152,21 @@ public:
             FMT(annotation_prefix, ".nullifier_var == nullifier_hash"));
     }
 
-    void generate_r1cs_witness(
-        const FieldT in_root,             // merkle tree root
-        const FieldT in_wallet_address,   // wallet address
-        const FieldT in_nullifier,        // unique linkable tag
-        const FieldT in_nullifier_secret, // nullifier preimage
-        const libff::bit_vector in_address,
-        const std::vector<FieldT> &in_path)
+    void generate_r1cs_witness(const mixer_witness& witness)
     {
         // public inputs
-        this->pb.val(root_var) = in_root;
-        this->pb.val(wallet_address_var) = in_wallet_address;
-        this->pb.val(nullifier_var) = in_nullifier;
+        this->pb.val(root_var) = witness.root;
+        this->pb.val(wallet_address_var) = witness.wallet_address;
+        this->pb.val(nullifier_var) = witness.nullifier;
 
         // private inputs
-        this->pb.val(nullifier_secret_var) = in_nullifier_secret;
-        address_bits.fill_with_bits(this->pb, in_address);
+        this->pb.val(nullifier_secret_var) = witness.nullifier_secret;
+        address_bits.fill_with_bits(this->pb, witness.address_bits);
 
+        assert( witness.path.size() == tree_depth );
         for (size_t i = 0; i < tree_depth; i++)
         {
-            this->pb.val(path_var[i]) = in_path[i];
+            this->pb.val(path_var[i]) = witness.path[i];
         }
 
         // gadgets
@@ -139,14 +185,9 @@ size_t mixer_tree_depth(void)
 }
 
 
-char* mixer_prove_internal(
+static char* mixer_prove_internal(
     const char *pk_file,
-    const FieldT &arg_root,
-    const FieldT &arg_wallet_address,
-    const FieldT &arg_nullifier,
-    const FieldT &arg_nullifier_secret,
-    const libff::bit_vector &address_bits,
-    const std::vector<FieldT> &arg_path
+    const ethsnarks::mixer_witness& witness
 )
 {
     ProtoboardT pb;
@@ -154,7 +195,7 @@ char* mixer_prove_internal(
     mod.generate_r1cs_constraints();
     std::cout << "Number of constraints for Hopper: " << pb.num_constraints() << std::endl;
 
-    mod.generate_r1cs_witness(arg_root, arg_wallet_address, arg_nullifier, arg_nullifier_secret, address_bits, arg_path);
+    mod.generate_r1cs_witness(witness); //arg_root, arg_wallet_address, arg_nullifier, arg_nullifier_secret, address_bits, arg_path);
 
     if (!pb.is_satisfied())
     {
@@ -171,31 +212,8 @@ char* mixer_prove_internal(
 char *mixer_prove_json( const char *pk_file, const char *in_json )
 {
     ppT::init_public_params();
-
-    const auto root = json::parse(in_json);
-    const auto arg_root = ethsnarks::parse_FieldT(root.at("root"));
-    const auto arg_wallet_address = ethsnarks::parse_FieldT(root.at("wallet_address"));
-    const auto arg_nullifier = ethsnarks::parse_FieldT(root.at("nullifier"));
-    const auto arg_nullifier_secret = ethsnarks::parse_FieldT(root.at("nullifier_secret"));
-
-    const auto arg_path = ethsnarks::create_F_list(root.at("path"));
-    if( arg_path.size() != MIXER_TREE_DEPTH )
-    {
-        std::cerr << "Path length doesn't match tree depth" << std::endl;
-        return nullptr;
-    }
-
-    // Fill address bits from integer
-    unsigned long address = root.at("address").get<decltype(address)>();
-    assert( (sizeof(address) * 8) >= MIXER_TREE_DEPTH );
-    libff::bit_vector address_bits;
-    address_bits.resize(MIXER_TREE_DEPTH);
-    for( size_t i = 0; i < MIXER_TREE_DEPTH; i++ )
-    {
-        address_bits[i] = (address & (1u<<i)) != 0;
-    }
-
-    return mixer_prove_internal(pk_file, arg_root, arg_wallet_address, arg_nullifier, arg_nullifier_secret, address_bits, arg_path);
+    const ethsnarks::mixer_witness witness = ethsnarks::mixer_witness::fromJSON(in_json);
+    return mixer_prove_internal(pk_file, witness);
 }
 
 
@@ -264,7 +282,16 @@ char *mixer_prove(
         arg_path[i] = FieldT(in_path[i]);
     }
 
-    return mixer_prove_internal(pk_file, arg_root, arg_wallet_address, arg_nullifier, arg_nullifier_secret, address_bits, arg_path);
+    const ethsnarks::mixer_witness witness = {
+        arg_root,
+        arg_wallet_address,
+        arg_nullifier,
+        arg_nullifier_secret,
+        address_bits,
+        arg_path
+    };
+
+    return mixer_prove_internal(pk_file, witness);
 }
 
 int mixer_genkeys(const char *pk_file, const char *vk_file)

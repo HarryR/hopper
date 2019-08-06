@@ -293,12 +293,17 @@ void print_bytes( const char *prefix, const size_t n_bytes, const uint8_t *in_by
 
 void dump_pb_r1cs_constraints(const ProtoboardT& pb)
 {
-#ifdef DEBUG
     auto full_variable_assignment = pb.primary_input();
     const auto auxiliary_input = pb.auxiliary_input();
     full_variable_assignment.insert(full_variable_assignment.end(), auxiliary_input.begin(), auxiliary_input.end());
 
     const auto cs = pb.get_constraint_system();
+
+    #ifdef DEBUG
+    const std::map<size_t, std::string> &annotations = cs.variable_annotations;
+    #else
+    const std::map<size_t, std::string> annotations;
+    #endif
 
     unsigned int i = 0;
     for( auto& constraint : cs.constraints )
@@ -307,16 +312,20 @@ void dump_pb_r1cs_constraints(const ProtoboardT& pb)
         const FieldT bres = constraint.b.evaluate(full_variable_assignment);
         const FieldT cres = constraint.c.evaluate(full_variable_assignment);
 
+        #ifdef DEBUG
         auto it = cs.constraint_annotations.find(i);
-        printf("constraint %u (%s)\n", i++, (it == cs.constraint_annotations.end() ? "no annotation" : it->second.c_str()));
+        const char *annotation = (it == cs.constraint_annotations.end() ? "no annotation" : it->second.c_str());
+        # else
+        const char *annotation = "no annotation";
+        #endif
+        printf("constraint %u (%s)\n", i++, annotation);
         printf("\t<a,(1,x)> = "); ares.print();
         printf("\t<b,(1,x)> = "); bres.print();
         printf("\t<c,(1,x)> = "); cres.print();
         printf("constraint was:\n");
-        dump_r1cs_constraint(constraint, full_variable_assignment, cs.variable_annotations);
+        dump_r1cs_constraint(constraint, full_variable_assignment, annotations);
         printf("\n");
     }
-#endif
 }
 
 

@@ -9,7 +9,7 @@
 namespace ethsnarks {
 
 
-std::string HexStringFromBigint(libff::bigint<libff::alt_bn128_r_limbs> _x){
+std::string HexStringFromBigint(const libff::bigint<libff::alt_bn128_r_limbs> _x){
     mpz_t value;
     ::mpz_init(value);
 
@@ -25,7 +25,7 @@ std::string HexStringFromBigint(libff::bigint<libff::alt_bn128_r_limbs> _x){
 }
 
 
-std::string outputPointG1AffineAsHex(G1T _p)
+std::string outputPointG1AffineAsHex(const G1T _p)
 {
         auto aff = _p;
         aff.to_affine_coordinates();
@@ -33,7 +33,7 @@ std::string outputPointG1AffineAsHex(G1T _p)
 }
 
 
-std::string outputPointG2AffineAsHex(G2T _p)
+std::string outputPointG2AffineAsHex(const G2T _p)
 {
         G2T aff = _p;
 
@@ -48,7 +48,7 @@ std::string outputPointG2AffineAsHex(G2T _p)
 }
 
 
-std::string proof_to_json(ProofT &proof, PrimaryInputT &input) {
+std::string proof_to_json(const ProofT &proof, const PrimaryInputT &input) {
     std::stringstream ss;
 
     ss << "{\n";
@@ -73,7 +73,7 @@ std::string proof_to_json(ProofT &proof, PrimaryInputT &input) {
 }
 
 
-std::string vk2json(VerificationKeyT &vk )
+std::string vk2json( const VerificationKeyT &vk )
 {
     std::stringstream ss;
     unsigned icLength = vk.gamma_ABC_g1.rest.indices.size() + 1;
@@ -97,7 +97,7 @@ std::string vk2json(VerificationKeyT &vk )
 }
 
 
-void vk2json_file(VerificationKeyT &vk, const std::string &path )
+void vk2json_file( const VerificationKeyT &vk, const std::string &path )
 {
     std::ofstream fh;
     fh.open(path, std::ios::binary);
