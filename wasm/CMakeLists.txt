@@ -48,9 +48,6 @@ target_link_libraries(mixer_selftest ethsnarks_common SHA3IUF)
 add_executable(mixer_js ../circuit/mixer.cpp)
 target_link_libraries(mixer_js ethsnarks_common SHA3IUF)
 
-# Bleh.. have to double-escape stuff and prefix with "SHELL:..." otherwise it combines multiple options into a single `-s` flag
-target_link_options(mixer_js PUBLIC "SHELL:-s EXPORTED_FUNCTIONS=[\\\"_mixer_prove_json\\\",\\\"_mixer_genkeys\\\",\\\"_mixer_verify\\\",\\\"_mixer_tree_depth\\\"]")
-target_link_options(mixer_js PUBLIC "SHELL:-s EXTRA_EXPORTED_RUNTIME_METHODS=[\\\"ccall\\\",\\\"cwrap\\\"]")
+target_link_libraries(mixer_js "-s EXPORTED_FUNCTIONS=[\\\"_mixer_prove_json\\\",\\\"_mixer_verify\\\",\\\"_mixer_tree_depth\\\"] -s EXTRA_EXPORTED_RUNTIME_METHODS=[\\\"ccall\\\",\\\"cwrap\\\"] -s FORCE_FILESYSTEM=1 -s DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=[\\\"$Browser\\\"]")
+#target_link_options(mixer_js PUBLIC "SHELL:-s EXPORTED_FUNCTIONS=[\\\"_mixer_prove_json\\\",\\\"_mixer_verify\\\",\\\"_mixer_tree_depth\\\"] -s DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=[\\\"$Browser\\\"]")
 
-target_link_options(mixer_js PUBLIC "SHELL:-s FORCE_FILESYSTEM=1")
-target_link_options(mixer_js PUBLIC "SHELL:-s DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=[\\\"$Browser\\\"]")
